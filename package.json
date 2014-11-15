@@ -1,0 +1,26 @@
+{
+  "name": "Salaryman",
+  "version": "1.0",
+  "description": "work, eat, sleep",
+  "keywords": [
+    "7drl",
+    "procjam2014"
+  ],
+  "homepage": "https://github.com/horaguchi/Salaryman",
+  "bugs": {
+    "url": "https://github.com/horaguchi/Salaryman/issues"
+  },
+  "license": "CC0",
+  "author": "Koji Horaguchi <koji.horaguchi@gmail.com> (http://horaguchi.github.io/)",
+  "main": "./all1000.js",
+  "bin": {
+    "all1000": "./all1000-cli.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:horaguchi/Salaryman.git"
+  },
+  "dependencies": {
+    "blessed": "~0.0.37"
+  }
+}
