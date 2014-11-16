@@ -1,46 +1,22 @@
-document.write('<canvas id="test"></canvas>');
+document.write('<pre id="salaryman"></pre>');
 
-Salaryman.prototype.drawCanvas = function (context) {
-  context.clearRect(0, 0, this.maxX, this.maxY);
+var width = 80;
+var height = 30;
 
-  this.mapData.forEach(function (row, y) {
-    row.forEach(function (col, x) {
-      if (col == "#") {
-        context.fillStyle = "rgb(255,255,0)";
-        context.fillRect(x, y, 1, 1);
-
-      } else if (col == "-") {
-        context.fillStyle = "black";
-        context.fillRect(x, y, 1, 1);
-
-      } else if (col == "|") {
-        context.fillStyle = "black";
-        context.fillRect(x, y, 1, 1);
-
-      } else if (col == "*") {
-        context.fillStyle = "black";
-        context.fillRect(x, y, 1, 1);
-
-      } else if (col == ".") {
-        context.fillStyle = "rgb(255,255,200)";
-        context.fillRect(x, y, 1, 1);
-
-      } else if (col == " ") {
-        // none
-      }
-    });
+Salaryman.prototype.drawMap = function (pre) {
+  pre.innerHTML = this.getStatus() + this.getMap(width, height).map(function (row) {
+    return row.join("") + "\n";
+  }).join("").replace(/\{(#.{6})-fg\}(.*?)\{\/\1-fg\}/g, function (str, p1, p2) {
+    return '<span style="color: ' + p1 + '">' + p2 + '</span>';
   });
-
 };
 
 var salaryman = new Salaryman;
 
-var scale = 1;
+var pre = document.getElementById('salaryman');
+salaryman.drawMap(pre);
 
-document.getElementById('test').width = salaryman.maxX * scale;
-document.getElementById('test').height = salaryman.maxY * scale;
-var context = document.getElementById('test').getContext('2d');
-context.scale(scale, scale);
-
-salaryman.createMap();
-salaryman.drawCanvas(context);
+document.body.onkeypress = function (e) {
+  salaryman.inputKey(String.fromCharCode(e.charCode));
+  salaryman.drawMap(pre);
+};
