@@ -450,6 +450,102 @@ Salaryman.updateSight = function (player_x, player_y, sight_data, map_data) {
   }
 };
 
+Salaryman.prototype.getWork = function (x, y) {
+  var day = Math.floor(this.time / 1440);
+  var coef = ( Math.abs(this.baseX + x) + Math.abs(this.baseY + y) ) / 30;
+  var noise  = (-0.1 * day + 1.1 + this.noiseData[y][x]) * 2;
+  var noise2 = ( 0.1 * day + 2.1 - this.noiseData[y][x]) * 2;
+  var result = {
+    money: Math.floor(coef * noise),
+    sanity: -1 * Math.floor(coef * noise2)
+  };
+  return result;
+};
+
+Salaryman.prototype.getFood = function (x, y) {
+  var day = Math.floor(this.time / 1440);
+  var noise = this.noiseData[y][x];
+  var coef = ( Math.abs(this.baseX + x) + Math.abs(this.baseY + y) ) / 10;
+  var noise  = (-0.1 * day + 1.1 + this.noiseData[y][x]) * 1;
+  var noise2 = ( 0.1 * day + 2.1 - this.noiseData[y][x]) * 1;
+  var result = {
+    hunger: Math.floor(coef * noise),
+    money: -1 * Math.floor(coef * noise2)
+  };
+  return result;
+};
+
+Salaryman.prototype.getBed = function (x, y) {
+  var day = Math.floor(this.time / 1440);
+  var noise = this.noiseData[y][x];
+  var coef = ( Math.abs(this.baseX + x) + Math.abs(this.baseY + y) ) / 20;
+  var noise  = (-0.1 * day + 1.1 + this.noiseData[y][x]) * 5;
+  var noise2 = ( 0.1 * day + 2.1 - this.noiseData[y][x]) * 5;
+  var result = {
+    sanity: Math.floor(coef * noise),
+    money: -1 * Math.floor(coef * noise2)
+  };
+  return result;
+};
+
+Salaryman.prototype.work = function () {
+  var player_x = this.playerX;
+  var player_y = this.playerY;
+  if (this.mapData[player_y][player_x] !== "$") {
+    this.log = "You can't work here.";
+    return;
+  }
+  var menu = this.getWork(player_x, player_y);
+  this.money += menu.money;
+  this.sanity += menu.sanity;
+  ++this.time;
+  --this.hunger;
+  if (this.time % 10 === 0) {
+    --this.sanity;
+  }
+  this.log = "You work ($:+" + menu.money + ", _:" + menu.sanity + ").";
+};
+
+Salaryman.prototype.eat = function () {
+  var player_x = this.playerX;
+  var player_y = this.playerY;
+  if (this.mapData[player_y][player_x] !== "%") {
+    this.log = "You can't eat here.";
+    return;
+  }
+  var menu = this.getFood(player_x, player_y);
+  if (this.money + menu.money < 0) {
+    this.log = "You don't have the money.";
+    return;
+  }
+  this.money += menu.money;
+  this.hunger = Math.min(1000, this.hunger + menu.hunger);
+  ++this.time;
+  if (this.time % 10 === 0) {
+    --this.sanity;
+  }
+  this.log = "You eat (%:+" + menu.hunger + ", $:" + menu.money + ").";
+};
+
+Salaryman.prototype.sleep = function () {
+  var player_x = this.playerX;
+  var player_y = this.playerY;
+  if (this.mapData[player_y][player_x] !== "_") {
+    this.log = "You can't sleep here.";
+    return;
+  }
+  var menu = this.getBed(player_x, player_y);
+  if (this.money + menu.money < 0) {
+    this.log = "You don't have the money.";
+    return;
+  }
+  this.money += menu.money;
+  this.sanity = Math.min(1000, this.sanity + menu.sanity);
+  ++this.time;
+  --this.hunger;
+  this.log = "You sleep (_:+" + menu.sanity + ", $:" + menu.money + ").";
+};
+
 //Salaryman.CAN_WALK = /^[.#+%$_|\- *]$/;
 Salaryman.CAN_WALK = /^[.#+%$_]$/;
 Salaryman.prototype.movePlayer = function (m_x, m_y) {
@@ -461,6 +557,9 @@ Salaryman.prototype.movePlayer = function (m_x, m_y) {
 
   ++this.time;
   --this.hunger;
+  if (this.time % 10 === 0) {
+    --this.sanity;
+  }
   this.playerX += m_x;
   this.playerY += m_y;
 
@@ -469,6 +568,20 @@ Salaryman.prototype.movePlayer = function (m_x, m_y) {
   var buffer_x = this.bufferX;
   var buffer_y = this.bufferY;
   Salaryman.updateSight(player_x, player_y, this.sightData, map_data);
+
+  var new_map = this.mapData[player_y][player_x];
+  var menu;
+  var point_log = "(" + (this.baseX + player_x) + "," + (this.baseY + player_y) + ")";
+  if (new_map === "$") {
+    menu = this.getWork(player_x, player_y);
+    this.log = "$" + point_log + " - $:+" + menu.money + ", _:" + menu.sanity;
+  } else if (new_map === "%") {
+    menu = this.getFood(player_x, player_y);
+    this.log = "%" + point_log + " - %:+" + menu.hunger + ", $:" + menu.money;
+  } else if (new_map === "_") {
+    menu = this.getBed(player_x, player_y);
+    this.log = "_" + point_log + " - _:+" + menu.sanity + ", $:" + menu.money;
+  }
 
   // check recreate
   var move_block_x = 0, move_block_y = 0;
@@ -540,6 +653,11 @@ Salaryman.prototype.getMap = function (width, height) {
 };
 
 Salaryman.prototype.inputKey = function (input_str) {
+  if (this.hunger < 0 || this.sanity < 0) {
+    this.log = "You died.";
+    return;
+  }
+
   if (input_str === "w" || input_str === "k") {
     this.movePlayer(0, -1);
   } else if (input_str === "a" || input_str === "h") {
@@ -558,7 +676,11 @@ Salaryman.prototype.inputKey = function (input_str) {
     this.movePlayer(-1, 1);
   } else if (input_str === "n") {
     this.movePlayer(1, 1);
-  } else {
-    //alert(input_str);
+  } else if (input_str === "$"){
+    this.work();
+  } else if (input_str === "_") {
+    this.sleep();
+  } else if (input_str === "%") {
+    this.eat();
   }
 };
