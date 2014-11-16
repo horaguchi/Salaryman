@@ -27,7 +27,7 @@ var Salaryman = function () {
   // initial game
   this.createMap();
   this.seekPlayerPoint();
-  this.log = "You need to work($), eat(%) and sleep(_)";
+  this.log = "WASD or HJKL - move, $ - work, % - eat, _ - sleep";
 };
 
 Salaryman.prototype.createMap = function () {
