@@ -1,12 +1,11 @@
-
-var Salaryman = function () {
-  noise.seed(Math.random());
+var Salaryman = function (seed) {
+  noise.seed(seed || Math.random());
   // map data
   this.noiseData = [];
   this.sightData = [];
   this.mapData = [];
   this.octave = 20;
-  this.roadThreshold = 0 - (Math.random() * 0.5);
+  this.roadThreshold = 0 - ((seed || Math.random()) * 0.5);
   this.blockX = 6;
   this.blockY = 5;
   this.bufferX = this.blockX * 200;
@@ -29,6 +28,8 @@ var Salaryman = function () {
   this.seekPlayerPoint();
   this.log = "WASD or HJKL - move, $ - work, % - eat, _ - sleep";
 };
+
+Salaryman.VERSION = "1.0"
 
 Salaryman.prototype.createMap = function () {
   var buffer_x = this.bufferX;
@@ -684,3 +685,8 @@ Salaryman.prototype.inputKey = function (input_str) {
     this.eat();
   }
 };
+
+// for node.js, not for CommonJS
+if (typeof module === "object" && module) {
+  module.exports = Salaryman;
+}

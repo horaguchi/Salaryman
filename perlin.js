@@ -307,4 +307,4 @@
        v);
   };
 
-})(this);
+})(Function("return this")());
